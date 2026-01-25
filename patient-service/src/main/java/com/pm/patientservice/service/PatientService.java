@@ -17,4 +17,16 @@ public class PatientService {
     public PatientService(PatientRepository patientRepository) {
         this.patientRepository = patientRepository;
     }
+
+    public List<PatientResponseDTO> getAllPatients(){
+        List<Patient> patients = patientRepository.findAll();
+        return patients
+                .stream()
+                .map(PatientMapper::toDto).toList();
+    }
+
+    public PatientResponseDTO createPatient(PatientRequestDTO patientRequestDTO){
+        Patient savedPatient = patientRepository.save(PatientMapper.toEntity(patientRequestDTO));
+        return PatientMapper.toDto(savedPatient);
+    }
 }
