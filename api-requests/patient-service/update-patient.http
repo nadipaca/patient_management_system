@@ -1,0 +1,12 @@
+### Update an existing patient record
+PUT http://localhost:4000/patients/223e4567-e89b-12d3-a456-426614174006
+Content-Type: application/json
+
+{
+"name": "Sarah Connor",
+"email": "sarah.taylor@example.com",
+"address": "789 Pine St, Newcity, USA",
+"dateOfBirth": "1985-05-20"
+}
+
+###
