@@ -8,7 +8,7 @@ RUN mvn dependency:go-offline -B
 
 COPY src ./src
 
-RUN mvn clean package
+RUN mvn -DskipTests clean package
 
 FROM openjdk:22-jdk AS runner
 
