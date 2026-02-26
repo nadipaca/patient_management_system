@@ -4,13 +4,17 @@ import com.pm.authservice.dto.LoginRequestDTO;
 import com.pm.authservice.dto.LoginResponseDTO;
 import com.pm.authservice.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Optional;
 
 @RestController
+@Validated
 public class AuthController {
 
     private final AuthService authService;
@@ -22,7 +26,7 @@ public class AuthController {
     @Operation(summary = "Generate token on user login")
     @PostMapping("/login")
     public ResponseEntity<LoginResponseDTO> login(
-            @RequestBody LoginRequestDTO loginRequestDTO
+            @Valid @RequestBody LoginRequestDTO loginRequestDTO
             ) {
         Optional<String> tokenOptional = authService.authenticate(loginRequestDTO);
 
@@ -36,10 +40,10 @@ public class AuthController {
 
     @Operation(summary = "Validate token")
     @GetMapping("/validate")
-    public ResponseEntity<Void> validateToken(@RequestHeader("Authorization") String authHeader) {
-        // Authorization: Bearer <token>
+    public ResponseEntity<Void> validateToken(
+            @RequestHeader("Authorization") @NotBlank(message = "Authorization header is required") String authHeader) {
 
-        if(authHeader == null || !authHeader.startsWith("Bearer ")){
+        if(!authHeader.startsWith("Bearer ")){
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 

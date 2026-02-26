@@ -1,15 +1,17 @@
-package com.pm.patientservice.exception;
+package com.pm.authservice.exception;
 
-import com.pm.patientservice.dto.ErrorResponse;
+import com.pm.authservice.dto.ErrorResponse;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -121,55 +123,34 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
 
-    @ExceptionHandler(PatientNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handlePatientNotFoundException(
-            PatientNotFoundException ex, HttpServletRequest request) {
+    @ExceptionHandler({JwtException.class, BadCredentialsException.class})
+    public ResponseEntity<ErrorResponse> handleAuthenticationException(
+            Exception ex, HttpServletRequest request) {
         
         ErrorResponse error = new ErrorResponse(
-            HttpStatus.NOT_FOUND.value(),
-            "Not Found",
-            ex.getMessage(),
+            HttpStatus.UNAUTHORIZED.value(),
+            "Unauthorized",
+            "Authentication failed: Invalid credentials or token",
             request.getRequestURI()
         );
 
-        log.warn("Patient not found: {}", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+        log.warn("Authentication failed: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
     }
 
-    @ExceptionHandler(EmailAlreadyExistsException.class)
-    public ResponseEntity<ErrorResponse> handleEmailAlreadyExistsException(
-            EmailAlreadyExistsException ex, HttpServletRequest request) {
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAccessDeniedException(
+            AccessDeniedException ex, HttpServletRequest request) {
         
         ErrorResponse error = new ErrorResponse(
-            HttpStatus.CONFLICT.value(),
-            "Conflict",
-            ex.getMessage(),
+            HttpStatus.FORBIDDEN.value(),
+            "Forbidden",
+            "Access denied. You do not have permission to access this resource.",
             request.getRequestURI()
         );
 
-        log.warn("Email conflict: {}", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
-    }
-
-    @ExceptionHandler(DataIntegrityViolationException.class)
-    public ResponseEntity<ErrorResponse> handleDataIntegrityViolationException(
-            DataIntegrityViolationException ex, HttpServletRequest request) {
-        
-        String message = "Data integrity violation. This may be due to duplicate values or constraint violations.";
-        
-        if (ex.getMessage() != null && ex.getMessage().contains("unique constraint")) {
-            message = "Duplicate entry detected. A record with this data already exists.";
-        }
-
-        ErrorResponse error = new ErrorResponse(
-            HttpStatus.CONFLICT.value(),
-            "Conflict",
-            message,
-            request.getRequestURI()
-        );
-
-        log.warn("Data integrity violation: {}", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+        log.warn("Access denied: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
     }
 
     @ExceptionHandler(Exception.class)
@@ -187,4 +168,3 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
     }
 }
-

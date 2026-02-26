@@ -15,9 +15,6 @@ public class AuthIntegrationTest {
 
     @Test
     public void shouldReturnOkWithValidToken(){
-        // 1. Arrange
-        // 2. ACT
-        // 3. Assert
         String loginPayload = """
             {
                "email":"testuser@test.com",
@@ -41,9 +38,6 @@ public class AuthIntegrationTest {
 
     @Test
     public void shouldReturnUnauthorizedOnInvalidLogin(){
-        // 1. Arrange
-        // 2. ACT
-        // 3. Assert
         String loginPayload = """
             {
                "email":"invalid_user@test.com",
@@ -58,5 +52,40 @@ public class AuthIntegrationTest {
                 .post("/auth/login")
                 .then()
                 .statusCode(401);
+    }
+
+    @Test
+    public void shouldReturn400OnInvalidEmail(){
+        String loginPayload = """
+            {
+               "email":"not-an-email",
+               "password":"password123"
+            }
+            """;
+
+            given()
+                .contentType("application/json")
+                .body(loginPayload)
+                .when()
+                .post("/auth/login")
+                .then()
+                .statusCode(400);
+    }
+
+    @Test
+    public void shouldReturn400OnMissingPassword(){
+        String loginPayload = """
+            {
+               "email":"test@example.com"
+            }
+            """;
+
+            given()
+                .contentType("application/json")
+                .body(loginPayload)
+                .when()
+                .post("/auth/login")
+                .then()
+                .statusCode(400);
     }
 }
