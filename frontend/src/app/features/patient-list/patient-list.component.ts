@@ -163,17 +163,28 @@ import { PatientResponse } from '../../core/models/patient.model';
     </div>
   `,
     styles: [`
-    .toolbar { position: sticky; top: 0; z-index: 100; }
+    .toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
     .toolbar-icon { margin-right: 8px; }
     .toolbar-title { font-size: 18px; font-weight: 500; }
     .spacer { flex: 1 1 auto; }
 
-    .page-content { padding: 24px; max-width: 1200px; margin: 0 auto; }
+    .page-content {
+      padding: 32px 24px;
+      max-width: 1200px;
+      margin: 0 auto;
+      background: #f4f6fb;
+      min-height: calc(100vh - 64px);
+    }
 
     .list-header {
       display: flex;
       justify-content: space-between;
-      align-items: flex-start;
+      align-items: center;
       flex-wrap: wrap;
       gap: 16px;
       margin-bottom: 24px;
@@ -200,7 +211,10 @@ import { PatientResponse } from '../../core/models/patient.model';
       gap: 12px;
       flex-wrap: wrap;
     }
-    .search-field { width: 280px; }
+    .search-field {
+      width: 320px;
+      max-width: 100%;
+    }
 
     .state-container {
       display: flex;
@@ -210,17 +224,25 @@ import { PatientResponse } from '../../core/models/patient.model';
       gap: 16px;
       color: #757575;
     }
-    .state-icon { font-size: 64px; width: 64px; height: 64px; opacity: 0.4; }
+    .state-icon {
+      font-size: 64px;
+      width: 64px;
+      height: 64px;
+      opacity: 0.4;
+    }
     .error-state { color: #b71c1c; }
 
     .table-container {
       background: white;
-      border-radius: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      border-radius: 16px;
+      box-shadow: 0 6px 16px rgba(15,23,42,0.12);
       overflow: hidden;
     }
     .patient-table { width: 100%; }
-    .patient-row:hover { background: #f5f5f5; cursor: pointer; }
+    .patient-row:hover {
+      background: #f5f5f5;
+      cursor: pointer;
+    }
 
     .name-cell {
       display: flex;
@@ -228,7 +250,8 @@ import { PatientResponse } from '../../core/models/patient.model';
       gap: 12px;
     }
     .avatar {
-      width: 36px; height: 36px;
+      width: 36px;
+      height: 36px;
       border-radius: 50%;
       background: linear-gradient(135deg, #1a237e, #0288d1);
       color: white;
@@ -238,6 +261,22 @@ import { PatientResponse } from '../../core/models/patient.model';
       font-weight: 600;
       font-size: 14px;
       flex-shrink: 0;
+    }
+
+    @media (max-width: 768px) {
+      .page-content {
+        padding: 24px 16px;
+      }
+      .list-header {
+        align-items: flex-start;
+      }
+      .header-actions {
+        width: 100%;
+        justify-content: flex-start;
+      }
+      .search-field {
+        flex: 1 1 auto;
+      }
     }
   `]
 })

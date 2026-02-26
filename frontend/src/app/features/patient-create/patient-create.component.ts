@@ -17,6 +17,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
 
 import { PatientApiService } from '../../core/services/patient-api.service';
 import { BackendError } from '../../core/models/patient.model';
@@ -31,6 +33,8 @@ const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
         CommonModule,
         RouterModule,
         ReactiveFormsModule,
+        MatDatepickerModule,
+        MatNativeDateModule,
         MatToolbarModule,
         MatCardModule,
         MatFormFieldModule,
@@ -102,14 +106,17 @@ const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
             <!-- Date of Birth -->
             <mat-form-field appearance="outline" class="full-width">
               <mat-label>Date of Birth</mat-label>
-              <input matInput formControlName="dateOfBirth" placeholder="YYYY-MM-DD" maxlength="10" />
+              <input
+                matInput
+                [matDatepicker]="dobPicker"
+                formControlName="dateOfBirth"
+                [max]="today"
+              />
+              <mat-datepicker-toggle matSuffix [for]="dobPicker"></mat-datepicker-toggle>
+              <mat-datepicker #dobPicker></mat-datepicker>
               <mat-icon matPrefix>cake</mat-icon>
-              <mat-hint>Format: YYYY-MM-DD</mat-hint>
               <mat-error *ngIf="f['dateOfBirth'].hasError('required')">
                 Date of birth is required
-              </mat-error>
-              <mat-error *ngIf="f['dateOfBirth'].hasError('pattern')">
-                Format must be YYYY-MM-DD
               </mat-error>
               <mat-error *ngIf="f['dateOfBirth'].hasError('serverError')">
                 {{ f['dateOfBirth'].getError('serverError') }}
@@ -119,14 +126,17 @@ const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
             <!-- Registered Date -->
             <mat-form-field appearance="outline" class="full-width">
               <mat-label>Registered Date</mat-label>
-              <input matInput formControlName="registeredDate" placeholder="YYYY-MM-DD" maxlength="10" />
+              <input
+                matInput
+                [matDatepicker]="regPicker"
+                formControlName="registeredDate"
+                [max]="today"
+              />
+              <mat-datepicker-toggle matSuffix [for]="regPicker"></mat-datepicker-toggle>
+              <mat-datepicker #regPicker></mat-datepicker>
               <mat-icon matPrefix>event</mat-icon>
-              <mat-hint>Format: YYYY-MM-DD (required for new patients)</mat-hint>
               <mat-error *ngIf="f['registeredDate'].hasError('required')">
                 Registered date is required
-              </mat-error>
-              <mat-error *ngIf="f['registeredDate'].hasError('pattern')">
-                Format must be YYYY-MM-DD
               </mat-error>
               <mat-error *ngIf="f['registeredDate'].hasError('serverError')">
                 {{ f['registeredDate'].getError('serverError') }}
@@ -181,12 +191,13 @@ export class PatientCreateComponent {
         name: ['', [Validators.required, Validators.maxLength(100)]],
         email: ['', [Validators.required, Validators.email]],
         address: ['', [Validators.required, Validators.maxLength(255)]],
-        dateOfBirth: ['', [Validators.required, Validators.pattern(ISO_DATE_PATTERN)]],
-        registeredDate: ['', [Validators.required, Validators.pattern(ISO_DATE_PATTERN)]]
+        dateOfBirth: [null as Date | null, [Validators.required]],
+        registeredDate: [new Date() as Date | null, [Validators.required]]
     });
 
     loading = false;
     apiError: string | null = null;
+    readonly today = new Date();
 
     /** Convenience getter for form controls */
     get f(): { [key: string]: AbstractControl } {
@@ -199,6 +210,17 @@ export class PatientCreateComponent {
         private router: Router,
         private snackBar: MatSnackBar
     ) { }
+
+    private formatDate(value: Date | string | null | undefined): string {
+        if (!value) {
+            return '';
+        }
+        if (typeof value === 'string') {
+            return value;
+        }
+        // Format as YYYY-MM-DD for backend
+        return value.toISOString().slice(0, 10);
+    }
 
     onSubmit(): void {
         if (this.form.invalid) {
@@ -214,8 +236,8 @@ export class PatientCreateComponent {
             name: val.name!,
             email: val.email!,
             address: val.address!,
-            dateOfBirth: val.dateOfBirth!,
-            registeredDate: val.registeredDate!
+            dateOfBirth: this.formatDate(val.dateOfBirth),
+            registeredDate: this.formatDate(val.registeredDate)
         }).subscribe({
             next: (created) => {
                 this.snackBar.open('Patient created successfully!', 'Close', { duration: 3000 });
