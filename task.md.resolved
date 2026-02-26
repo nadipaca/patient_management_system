@@ -1,0 +1,38 @@
+# Angular Frontend Task Checklist
+
+## Phase 1: Research & Planning
+- [/] Explore backend controllers (gateway, patient-service, auth-service)
+- [ ] Identify all REST endpoints (URLs, methods, request/response shapes)
+- [ ] Create implementation plan with folder structure
+
+## Phase 2: Project Setup
+- [ ] Initialize Angular 17+ project in /frontend
+- [ ] Install Angular Material
+- [ ] Configure environments (environment.ts / environment.prod.ts)
+- [ ] Set up app routing module
+
+## Phase 3: Core Infrastructure
+- [ ] Create TypeScript interfaces/models (Patient, Auth, Pagination, ErrorResponse)
+- [ ] Create AuthApiService (login)
+- [ ] Create PatientApiService (list/get/create/update/delete)
+- [ ] Create AuthInterceptor (attach token, handle 401)
+- [ ] Create AuthGuard (protect routes)
+- [ ] Create ErrorHandlerService / utility
+
+## Phase 4: Pages / Components
+- [ ] LoginComponent (/login)
+- [ ] PatientListComponent (/patients) - table, search, pagination, loading/error
+- [ ] CreatePatientComponent (/patients/new) - reactive form + validation
+- [ ] PatientDetailComponent (/patients/:id) - view + edit mode + delete modal
+
+## Phase 5: Shared Components
+- [ ] ConfirmDialog component (for delete)
+- [ ] Error/notification snackbar integration
+
+## Phase 6: Tests
+- [ ] Unit test: PatientApiService (HttpTestingController)
+- [ ] Component test: CreatePatient form validation
+- [ ] Component test: PatientList rendering from mocked API
+
+## Phase 7: Documentation
+- [ ] Create /frontend/README.md
