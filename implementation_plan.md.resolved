@@ -1,0 +1,215 @@
+# Angular Frontend: Patient Management System
+
+A minimal, production-style Angular 17 frontend that integrates with the existing Spring Cloud Gateway and demonstrates TypeScript skills, reactive forms, REST integration, auth flow, and testing.
+
+## A) Backend Endpoints Found
+
+All patient routes require a `Bearer <token>` header (enforced by gateway JWT filter).
+
+| Method | URL (via Gateway @ port 4004) | Description |
+|--------|-------------------------------|-------------|
+| `POST` | `http://localhost:4004/auth/login` | Login → returns `{ token: string }` |
+| `GET`  | `http://localhost:4004/api/patients` | List all patients → `PatientResponse[]` |
+| `POST` | `http://localhost:4004/api/patients` | Create patient → [PatientResponse](file:///d:/workspace/patient_management_system/patient-service/src/main/java/com/pm/patientservice/dto/PatientResponseDTO.java#3-50) (201) |
+| `PUT`  | `http://localhost:4004/api/patients/{id}` | Update patient → [PatientResponse](file:///d:/workspace/patient_management_system/patient-service/src/main/java/com/pm/patientservice/dto/PatientResponseDTO.java#3-50) (200) |
+| `DELETE` | `http://localhost:4004/api/patients/{id}` | Delete patient → `204 No Content` |
+
+> **Note**: No GET-by-id endpoint exists in the backend. Patient detail view will use the list data (fetch all, find by id client-side), with a clear TODO comment.
+
+> **Note**: No server-side search/pagination. Client-side search + pagination will be implemented with a clear TODO comment.
+
+### Error Response Shape
+```json
+{
+  "timestamp": "...", "status": 400, "error": "Bad Request",
+  "message": "Validation failed...", "path": "/patients",
+  "details": { "fieldErrors": { "email": "Email should be valid" } }
+}
+```
+
+---
+
+## B) Frontend Folder Structure
+
+```
+/frontend
+├── angular.json
+├── package.json
+├── tsconfig.json
+├── README.md
+└── src/
+    ├── environments/
+    │   ├── environment.ts          # apiBaseUrl: http://localhost:4004
+    │   └── environment.prod.ts
+    ├── app/
+    │   ├── app.config.ts           # provideRouter, provideHttpClient, interceptors
+    │   ├── app.routes.ts           # Route definitions
+    │
+    │   ├── core/
+    │   │   ├── models/
+    │   │   │   ├── patient.model.ts
+    │   │   │   └── auth.model.ts
+    │   │   ├── services/
+    │   │   │   ├── auth-api.service.ts
+    │   │   │   ├── patient-api.service.ts
+    │   │   │   └── auth-state.service.ts   # token in-memory + localStorage
+    │   │   ├── interceptors/
+    │   │   │   └── auth.interceptor.ts     # attach token + handle 401
+    │   │   └── guards/
+    │   │       └── auth.guard.ts
+    │
+    │   ├── features/
+    │   │   ├── login/
+    │   │   │   └── login.component.ts
+    │   │   ├── patient-list/
+    │   │   │   └── patient-list.component.ts
+    │   │   ├── patient-create/
+    │   │   │   └── patient-create.component.ts
+    │   │   └── patient-detail/
+    │   │       └── patient-detail.component.ts
+    │
+    │   └── shared/
+    │       └── confirm-dialog/
+    │           └── confirm-dialog.component.ts
+    │
+    └── styles.css
+```
+
+**Approach**: Angular 17 **standalone components** (no NgModules), Angular Material for UI.
+
+---
+
+## Proposed Changes
+
+### [NEW] Frontend Project — `d:\workspace\patient_management_system\frontend\`
+
+#### [NEW] package.json / angular.json / tsconfig.json
+Standard Angular 17 CLI scaffold via `ng new`. Scripts: `start`, `test`, `build`.
+
+---
+
+#### [NEW] environments/environment.ts
+```ts
+export const environment = { apiBaseUrl: 'http://localhost:4004' };
+```
+
+---
+
+#### [NEW] core/models/patient.model.ts
+TypeScript interfaces matching backend DTOs:
+- [PatientRequest](file:///d:/workspace/patient_management_system/patient-service/src/main/java/com/pm/patientservice/dto/PatientRequestDTO.java#10-73) — name, email, address, dateOfBirth, registeredDate
+- [PatientResponse](file:///d:/workspace/patient_management_system/patient-service/src/main/java/com/pm/patientservice/dto/PatientResponseDTO.java#3-50) — id, name, email, address, dateOfBirth
+- `BackendError` — timestamp, status, error, message, path, details
+
+---
+
+#### [NEW] core/models/auth.model.ts
+- [LoginRequest](file:///d:/workspace/patient_management_system/auth-service/src/main/java/com/pm/authservice/dto/LoginRequestDTO.java#7-32) — email, password
+- `LoginResponse` — token
+
+---
+
+#### [NEW] core/services/auth-state.service.ts
+- Stores JWT token in a private field and `localStorage`
+- `setToken(token)`, `getToken()`, `clearToken()`, `isLoggedIn()`
+
+---
+
+#### [NEW] core/services/auth-api.service.ts
+- [login(req: LoginRequest): Observable<LoginResponse>](file:///d:/workspace/patient_management_system/auth-service/src/main/java/com/pm/authservice/controller/AuthController.java#26-40) → `POST /auth/login`
+
+---
+
+#### [NEW] core/services/patient-api.service.ts
+- [getAll(): Observable<PatientResponse[]>](file:///d:/workspace/patient_management_system/patient-service/src/main/java/com/pm/patientservice/controller/PatientController.java#31-37) → `GET /api/patients`
+- [create(p: PatientRequest): Observable<PatientResponse>](file:///d:/workspace/patient_management_system/patient-service/src/main/java/com/pm/patientservice/controller/PatientController.java#45-53) → `POST /api/patients`
+- [update(id: string, p: PatientRequest): Observable<PatientResponse>](file:///d:/workspace/patient_management_system/patient-service/src/main/java/com/pm/patientservice/controller/PatientController.java#54-63) → `PUT /api/patients/{id}`
+- [delete(id: string): Observable<void>](file:///d:/workspace/patient_management_system/patient-service/src/main/java/com/pm/patientservice/controller/PatientController.java#64-71) → `DELETE /api/patients/{id}`
+
+---
+
+#### [NEW] core/interceptors/auth.interceptor.ts
+Functional interceptor (`HttpInterceptorFn`):
+- Reads token from `AuthStateService`; attaches `Authorization: Bearer <token>` if present
+- Catches `401` response → calls `AuthStateService.clearToken()` → `router.navigate(['/login'])`
+
+---
+
+#### [NEW] core/guards/auth.guard.ts
+Functional `CanActivateFn`:
+- Returns `true` if token exists, else navigates to `/login`
+
+---
+
+#### [NEW] features/login/login.component.ts
+- Standalone component with Angular Material `mat-form-field`, reactive form
+- Fields: email (required + email validator), password (required + minLength 8)
+- On submit: calls `AuthApiService.login()`, stores token, redirects to `/patients`
+- Displays API error message on 401
+
+---
+
+#### [NEW] features/patient-list/patient-list.component.ts
+- Loads all patients on init via `PatientApiService.getAll()`
+- Client-side search with `debounceTime(300)` on search input (RxJS + TODO server-side search)
+- Client-side pagination (page size: 10, TODO: server-side)
+- `mat-table` with columns: name, email, dateOfBirth, address + actions
+- Row click → `/patients/:id`
+- Loading spinner + error banner states
+
+---
+
+#### [NEW] features/patient-create/patient-create.component.ts
+- Reactive form: name (required, max 100), email (required, email format), address (required, max 255), dateOfBirth (required, YYYY-MM-DD pattern), registeredDate (required, YYYY-MM-DD pattern)
+- Shows inline field errors from both Angular validators and backend `fieldErrors`
+- On submit: calls `PatientApiService.create()`, navigates to `/patients/:id`
+
+---
+
+#### [NEW] features/patient-detail/patient-detail.component.ts
+- Loads patient from list (client-side lookup by id), shows detail view
+- Toggle edit mode → same reactive form as create (minus registeredDate)
+- Delete button → opens `ConfirmDialogComponent` → calls `PatientApiService.delete()` → navigates to `/patients`
+
+---
+
+#### [NEW] shared/confirm-dialog/confirm-dialog.component.ts
+- Simple Angular Material `mat-dialog` with "Confirm" and "Cancel" buttons
+
+---
+
+#### [NEW] frontend/README.md
+- Prerequisites, run instructions, API base URL config, demo flow
+
+---
+
+## Verification Plan
+
+### Automated Tests (run locally)
+
+First, install dependencies:
+```bash
+cd d:\workspace\patient_management_system\frontend
+npm install
+```
+
+Run all tests (headless):
+```bash
+npm test -- --watch=false --browsers=ChromeHeadless
+```
+
+**Test 1** — `patient-api.service.spec.ts`: Uses `HttpTestingController` to verify [getAll()](file:///d:/workspace/patient_management_system/patient-service/src/main/java/com/pm/patientservice/controller/PatientController.java#31-37) makes `GET /api/patients`, [create()](file:///d:/workspace/patient_management_system/patient-service/src/main/java/com/pm/patientservice/controller/PatientController.java#45-53) makes `POST /api/patients`, [delete()](file:///d:/workspace/patient_management_system/patient-service/src/main/java/com/pm/patientservice/controller/PatientController.java#64-71) makes `DELETE /api/patients/{id}`.
+
+**Test 2** — `patient-create.component.spec.ts`: Renders form, submits empty → checks required errors appear on all fields. Submits invalid email → checks email error.
+
+**Test 3** — `patient-list.component.spec.ts`: Provides mock `PatientApiService` returning 2 patients. Checks table rows are rendered. Checks search input filters the list.
+
+### Manual Smoke Test (requires running backend)
+1. Start backend: `docker-compose up -d` (or run patient-service on :4000, auth-service on :4005, gateway on :4004)
+2. Start frontend: `npm start` (opens at `http://localhost:4200`)
+3. Navigate to `http://localhost:4200` → should redirect to `/login`
+4. Log in with valid credentials → should redirect to `/patients`
+5. Create a patient via `/patients/new` → should appear in the list
+6. Click a patient row → should show detail view
+7. Edit the patient → save → verify changes
+8. Delete the patient → confirm → should be removed from list
